@@ -14,5 +14,300 @@
 <body>
   <div id="root"></div>
 </body>
+<!-- 
+  AZLON AI CHATBOT EMBED
+  Paste this entire snippet just before the closing </body> tag of your website.
+-->
+<div id="azlon-chat-widget"></div>
 
+<style>
+  #azlon-chat-widget * {
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  .azlon-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .azlon-fab:hover {
+    transform: scale(1.1);
+  }
+  .azlon-window {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    width: 380px;
+    height: 600px;
+    max-height: calc(100vh - 120px);
+    background-color: #09090b;
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+    border: 1px solid #27272a;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .azlon-window.open {
+    display: flex;
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .azlon-header {
+    background: linear-gradient(135deg, #18181b, #27272a);
+    padding: 16px 20px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #3f3f46;
+  }
+  .azlon-title {
+    font-weight: 600;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .azlon-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px #10b981;
+  }
+  .azlon-close {
+    background: none;
+    border: none;
+    color: #a1a1aa;
+    cursor: pointer;
+    font-size: 20px;
+    transition: color 0.2s;
+  }
+  .azlon-close:hover {
+    color: white;
+  }
+  .azlon-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: #09090b;
+  }
+  .azlon-msg-wrap {
+    display: flex;
+    width: 100%;
+  }
+  .azlon-msg-wrap.user {
+    justify-content: flex-end;
+  }
+  .azlon-msg-wrap.bot {
+    justify-content: flex-start;
+  }
+  .azlon-bubble {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .azlon-msg-wrap.user .azlon-bubble {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .azlon-msg-wrap.bot .azlon-bubble {
+    background-color: #27272a;
+    color: #f4f4f5;
+    border-bottom-left-radius: 4px;
+  }
+  .azlon-input-area {
+    padding: 16px;
+    background-color: #18181b;
+    border-top: 1px solid #27272a;
+    display: flex;
+    gap: 12px;
+  }
+  .azlon-input {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 24px;
+    border: 1px solid #3f3f46;
+    background-color: #27272a;
+    color: white;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  .azlon-input:focus {
+    border-color: #6366f1;
+  }
+  .azlon-send {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 0 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .azlon-send:hover {
+    opacity: 0.9;
+  }
+  .azlon-send:disabled {
+    background: #3f3f46;
+    color: #a1a1aa;
+    cursor: not-allowed;
+  }
+  /* Scrollbar */
+  .azlon-messages::-webkit-scrollbar { width: 6px; }
+  .azlon-messages::-webkit-scrollbar-track { background: #09090b; }
+  .azlon-messages::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+  
+  @media (max-width: 480px) {
+    .azlon-window {
+      width: calc(100vw - 40px);
+      right: 20px;
+      bottom: 90px;
+      height: 70vh;
+    }
+  }
+</style>
+
+<script>
+(function() {
+  // --- CONFIGURATION ---
+  // Replace this with your n8n Production Webhook URL
+  const WEBHOOK_URL = 'https://n8n.n8k5q.space/webhook/Azlon-Chatbot'; 
+  
+  const container = document.getElementById('azlon-chat-widget');
+  
+  // Create UI Elements
+  const fab = document.createElement('button');
+  fab.className = 'azlon-fab';
+  fab.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+  
+  const chatWindow = document.createElement('div');
+  chatWindow.className = 'azlon-window';
+  
+  chatWindow.innerHTML = `
+    <div class="azlon-header">
+      <div class="azlon-title"><span class="azlon-dot"></span> Azlon AI Assistant</div>
+      <button class="azlon-close" id="azlon-close">✕</button>
+    </div>
+    <div class="azlon-messages" id="azlon-messages"></div>
+    <form class="azlon-input-area" id="azlon-form">
+      <input type="text" class="azlon-input" id="azlon-input" placeholder="Ask about our AI services..." autocomplete="off">
+      <button type="submit" class="azlon-send" id="azlon-send">Send</button>
+    </form>
+  `;
+  
+  container.appendChild(chatWindow);
+  container.appendChild(fab);
+  
+  const messagesDiv = document.getElementById('azlon-messages');
+  const form = document.getElementById('azlon-form');
+  const input = document.getElementById('azlon-input');
+  const closeBtn = document.getElementById('azlon-close');
+  const sendBtn = document.getElementById('azlon-send');
+  
+  // Session ID Management
+  let sessionId = localStorage.getItem('azlon_ai_session');
+  if (!sessionId) {
+    sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('azlon_ai_session', sessionId);
+  }
+  
+  let isOpen = false;
+  
+  // Toggle Window
+  function toggleChat() {
+    isOpen = !isOpen;
+    if (isOpen) {
+      chatWindow.style.display = 'flex';
+      setTimeout(() => chatWindow.classList.add('open'), 10);
+      fab.style.display = 'none';
+      if (messagesDiv.children.length === 0) {
+        addMessage('bot', 'Hi there! I am the Azlon AI assistant. How can I help you automate your business today?');
+      }
+    } else {
+      chatWindow.classList.remove('open');
+      setTimeout(() => {
+        chatWindow.style.display = 'none';
+        fab.style.display = 'flex';
+      }, 300);
+    }
+  }
+  
+  fab.addEventListener('click', toggleChat);
+  closeBtn.addEventListener('click', toggleChat);
+  
+  function addMessage(role, text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'azlon-msg-wrap ' + role;
+    const bubble = document.createElement('div');
+    bubble.className = 'azlon-bubble';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    messagesDiv.appendChild(wrap);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+  
+  // Handle form submission
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    
+    addMessage('user', text);
+    input.value = '';
+    input.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.textContent = '...';
+    
+    try {
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          chatInput: text
+        })
+      });
+      
+      const data = await response.text();
+      addMessage('bot', data);
+    } catch (err) {
+      console.error(err);
+      addMessage('bot', 'Sorry, I am having trouble connecting to the server right now.');
+    } finally {
+      input.disabled = false;
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+      input.focus();
+    }
+  });
+})();
+</script>
 </html>
